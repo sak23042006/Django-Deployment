@@ -1,0 +1,227 @@
+{% extends "home.html" %}
+{% block main %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Building Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #276ecc;
+        }
+
+        .containr {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            margin-top: 6px;
+        }
+
+        select {
+            padding: 12px 16px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input[type="radio"] {
+            margin-top: 0;
+        }
+
+        /* Button Styles */
+        .btn {
+            background-color: #0d52d3;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #5e87d3;
+        }
+
+        .btn:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            .containr {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="containr">
+        <h2>Build Your Profile</h2>
+        {% for i in data %}
+        <form id="profileForm" action="{% url 'updateprofile' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- Personal Information -->
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" name="fullName" placeholder="John Doe" readonly value="{{i.user.firstname}} {{i.user.lastname}}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="john.doe@example.com" readonly value="{{i.user.email}}" required>
+            </div>
+
+            <!-- Profile Image Selection -->
+           
+
+            <!-- Gender Selection -->
+            <!-- <div class="form-group">
+                <label>Gender</label>
+                <div>
+                    <input type="radio" id="male" name="gender" value="Male" required>
+                    <label for="male">Male</label>
+                    <input type="radio" id="female" name="gender" value="Female" required>
+                    <label for="female">Female</label>
+                    <input type="radio" id="other" name="gender" value="Other" required>
+                    <label for="other">Other</label>
+                </div>
+            </div> -->
+
+            <!-- Contact Information -->
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" name="phone" placeholder="(555) 123-4567" value="{{i.user.phone}}" readonly required>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address</label>
+                <textarea id="address" name="address" placeholder="123 Main St, City, Country" value="{{i.address}}"  required>{{i.address}}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="bio">Short Bio</label>
+                <textarea id="bio" name="bio" placeholder="Tell us a little about yourself..." required>{{i.bio}}</textarea>
+            </div>
+
+            <!-- Games Selection -->
+            <div class="form-group">
+                <label>Games</label>
+                <div>
+                    <!-- Indoor/Outdoor Radio Buttons -->
+                    <label>
+                        <input type="radio" name="game_type" value="indoor" onclick="toggleGameDropdown('indoor')"> Indoor Games
+                    </label>
+                    <label>
+                        <input type="radio" name="game_type" value="outdoor" onclick="toggleGameDropdown('outdoor')"> Outdoor Games
+                    </label>
+                </div>
+
+                <!-- Indoor Games Dropdown -->
+                <div id="indoorGames" style="display:none;">
+                    <h4>Select Indoor Game</h4>
+                    <select name="indoor_game">
+                        <option value="">Select Indoor Game</option>
+                        <option value="Chess">Chess</option>
+                        <option value="Table Tennis">Table Tennis</option>
+                        <option value="Badminton">Badminton</option>
+                        <option value="Carrom">Carrom</option>
+                    </select>
+                </div>
+
+                <!-- Outdoor Games Dropdown -->
+                <div id="outdoorGames" style="display:none;">
+                    <h4>Select Outdoor Game</h4>
+                    <select name="outdoor_game">
+                        <option value="">Select Outdoor Game</option>
+                        <option value="Football">Football</option>
+                        <option value="Cricket">Cricket</option>
+                        <option value="Basketball">Basketball</option>
+                        <option value="Volleyball">Volleyball</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="profileImage">Profile Image</label>
+                <input type="file" id="profileImage" name="profileImage" accept="image/*" required>
+                <small>Accepted file types: .jpg, .jpeg, .png</small>
+            </div>
+{% endfor %}
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button type="submit" class="btn">Save Profile</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Function to toggle between indoor and outdoor game selections
+        function toggleGameDropdown(type) {
+            if (type === 'indoor') {
+                document.getElementById('indoorGames').style.display = 'block';
+                document.getElementById('outdoorGames').style.display = 'none';
+            } else if (type === 'outdoor') {
+                document.getElementById('outdoorGames').style.display = 'block';
+                document.getElementById('indoorGames').style.display = 'none';
+            }
+        }
+    </script>
+
+</body>
+
+{% endblock %}

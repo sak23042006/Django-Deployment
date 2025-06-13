@@ -1,0 +1,89 @@
+{% extends "index.html" %}
+{% block main %}
+
+
+        <!-- Header Start -->
+        <div class="container-fluid bg-breadcrumb">
+            <div class="container text-center py-5" style="max-width: 900px;">
+                <h4 class="text-white display-4 mb-4 wow fadeInDown" data-wow-delay="0.1s">About</h4>
+                <ol class="breadcrumb d-flex justify-content-center mb-0 wow fadeInDown" data-wow-delay="0.3s">
+                    <li class="breadcrumb-item"><a href="{% url "index" %}">Home</a></li>
+                    <li class="breadcrumb-item active text-primary">About</li>
+                </ol>    
+            </div>
+        </div>
+        <!-- Header End -->
+
+
+        <!-- About Start -->
+        <div class="container-fluid bg-light about py-5">
+            <div class="container py-5">
+                <div class="row g-5">
+                    <div class="col-xl-6 wow fadeInLeft" data-wow-delay="0.2s">
+                        <div class="about-item-content bg-white rounded p-5 h-80">
+                            <h4 class="text-primary">About </h4>
+                            <h5 >Online Sports Slot Reservation System with Realtime Weather Based Pricing and Team Matching</h5>
+                            <p>The Online Sports Slot Reservation System allows users to book sports facilities in real-time, offering a seamless and convenient reservation experience. It features dynamic pricing based on current weather conditions, adjusting rates based on factors like temperature, rain, or sunlight to optimize availability. The system also matches teams for various sports, enabling users to find opponents or teammates based on skill level and availability. Integration with weather APIs ensures accurate, real-time pricing updates. This system enhances user experience by offering both affordability and convenience through weather-driven adjustments and team matchmaking.
+                            </p>
+                            {% comment %} <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae praesentium recusandae eligendi modi hic
+                            </p>
+                            <p class="text-dark"><i class="fa fa-check text-primary me-3"></i>We can save your money.</p>
+                            <p class="text-dark"><i class="fa fa-check text-primary me-3"></i>Production or trading of good</p>
+                            <p class="text-dark mb-4"><i class="fa fa-check text-primary me-3"></i>Our life insurance is flexible</p> {% endcomment %}
+                            <a class="btn btn-primary rounded-pill py-3 px-5" href="#">More Information</a>
+                        </div>
+                    </div>
+                    <div class="col-xl-6 wow fadeInRight" data-wow-delay="0.2s">
+                        <div class="bg-white rounded p-5 h-70" style="margin-top: 0px;">
+                            <div class="row g-4 justify-content-center">
+                                <div class="col-12">
+                                    <div class="rounded bg-light">
+                                        <img src="/static/img/i7.png" class="img-fluid rounded w-100 " alt="" style="height: 480px;">
+                                    </div>
+                                </div>
+                                {% comment %} <div class="col-sm-6">
+                                    <div class="counter-item bg-light rounded p-3 h-100">
+                                        <div class="counter-counting">
+                                            <span class="text-primary fs-2 fw-bold" data-toggle="counter-up">129</span>
+                                            <span class="h1 fw-bold text-primary">+</span>
+                                        </div>
+                                        <h4 class="mb-0 text-dark">Insurance Policies</h4>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="counter-item bg-light rounded p-3 h-100">
+                                        <div class="counter-counting">
+                                            <span class="text-primary fs-2 fw-bold" data-toggle="counter-up">99</span>
+                                            <span class="h1 fw-bold text-primary">+</span>
+                                        </div>
+                                        <h4 class="mb-0 text-dark">Awards WON</h4>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="counter-item bg-light rounded p-3 h-100">
+                                        <div class="counter-counting">
+                                            <span class="text-primary fs-2 fw-bold" data-toggle="counter-up">556</span>
+                                            <span class="h1 fw-bold text-primary">+</span>
+                                        </div>
+                                        <h4 class="mb-0 text-dark">Skilled Agents</h4>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="counter-item bg-light rounded p-3 h-100">
+                                        <div class="counter-counting">
+                                            <span class="text-primary fs-2 fw-bold" data-toggle="counter-up">967</span>
+                                            <span class="h1 fw-bold text-primary">+</span>
+                                        </div>
+                                        <h4 class="mb-0 text-dark">Team Members</h4>
+                                    </div>
+                                </div> {% endcomment %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- About End -->
+
+
+        {% endblock  %}

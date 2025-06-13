@@ -1,0 +1,44 @@
+
+{% extends "home.html" %}
+{% block main %}
+
+ <!-- Service Start -->
+ <div class="container-fluid service py-5">
+    <div class="container py-5">
+        <h1 class="text-center display-4 mb-4">Bookings</h1>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-primary text-center">
+                    <tr>
+                        <th>Ground Name</th>
+                        <th>Game Name</th>
+                        <th>Booked Date</th>
+                        <th>Location</th>
+                        <th>User Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in getUserBookings %}
+                    <tr>
+                        <td>{{ i.groundName }}</td>
+                        <td>{{ i.gameName }}</td>
+                        <td>{{ i.paymentDate }}</td>
+                        <td>{{ i.location }}</td>
+                        <td>{{ i.userEmail }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'addTeam' i.paymentID %}" class="btn btn-success btn-sm">Add Team</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if not getUserBookings %}
+        <p class="text-center mt-4">No bookings available at the moment.</p>
+        {% endif %}
+    </div>
+</div>
+<!-- Service End -->
+
+{% endblock %}

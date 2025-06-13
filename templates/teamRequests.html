@@ -1,0 +1,47 @@
+
+{% extends "home.html" %}
+{% block main %}
+
+ <!-- Service Start -->
+ <div class="container-fluid service py-5">
+    <div class="container py-5">
+        <h1 class="text-center display-4 mb-4">Other Bookings</h1>
+        {% if messages %}
+        {% for message in messages %}
+        <p class="text-center">{{message}}</p>
+        {% endfor %}
+        {% endif %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-primary text-center">
+                    <tr>
+                        <th>Ground Name</th>
+                        <th>Game Name</th>
+                        <th>Location</th>
+                        <th>Requester Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in getUserRequsts %}
+                    <tr>
+                        <td>{{ i.groundName }}</td>
+                        <td>{{ i.gameName }}</td>
+                        <td>{{ i.location }}</td>
+                        <td>{{ i.requestSender }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'acceptUserRequest' i.requestID %}" class="btn btn-success btn-sm">Accept Requst</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if not getUserRequsts %}
+        <p class="text-center mt-4">No requests available at the moment.</p>
+        {% endif %}
+    </div>
+</div>
+<!-- Service End -->
+
+{% endblock %}

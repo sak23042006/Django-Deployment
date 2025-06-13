@@ -1,0 +1,41 @@
+{% extends "home.html" %}
+{% block main %}
+
+<div class="container py-5 w-50">
+    <h1 class="text-center mb-4">Add Your Team Members</h1>
+    {% if messages %}
+    {% for messege in messages %}
+    <p class="text-center mb-4">{{messege}}</p>
+    {% endfor %}
+    {% endif %}
+    <form id="teamForm" method="POST" action="{% url 'addTeam' paymentID %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="userName" class="form-label">Main User Name:</label>
+            <input type="text" class="form-control" id="userName" name="userName" value="{{leaderName}}" required readonly>
+        </div>
+
+        <div id="teamMembersContainer" class="mb-3">
+            <label class="form-label">Team Members:</label>
+            <!-- Dynamically added input fields will appear here -->
+        </div>
+        <button type="button" class="btn btn-secondary me-2" id="addMemberBtn">Add Team Member</button>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+<script>
+    // JavaScript to dynamically add team member input fields
+    document.getElementById('addMemberBtn').addEventListener('click', () => {
+        const container = document.getElementById('teamMembersContainer');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'teamMembers';
+        input.className = 'form-control mb-2';
+        input.placeholder = 'Enter team member name';
+        container.appendChild(input);
+    });
+</script>
+
+{% endblock %}

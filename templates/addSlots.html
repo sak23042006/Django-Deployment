@@ -1,0 +1,82 @@
+{% extends "home.html" %}
+
+{% block main %}
+<div class="container py-5">
+  {% if messages %}
+    {% for  i in messages %}
+    <p class="text-center">{{i}}</p>
+    {% endfor %}
+  {% endif %}
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card shadow-lg rounded-4">
+          <div class="card-header bg-success text-white">
+            <h4 class="mb-0">Ground Slot Booking Form</h4>
+          </div>
+          <div class="card-body">
+            <form method="post" action="{% url 'addSlots' %}" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="row g-4">
+  
+                <div class="col-md-6 w-100">
+                  <label for="groundName" class="form-label">Ground Name</label>
+                  <input type="text" class="form-control" id="groundName" name="groundName" placeholder="Enter Ground Name">
+                </div>
+  
+                <div class="col-md-6 w-100">
+                  <label for="date" class="form-label">Weather Report</label>
+                  <input type="date" class="form-control" id="date" name="date">
+                </div>
+  
+                <div class="col-md-6 w-100">
+                    <label for="end_time" class="form-label">End Time</label>
+                    <select class="form-select" id="end_time" name="end_time">
+                      <option value="">Select End Time</option>
+                      <option value="08:00-10:00">08:00 to 10:00</option>
+                      <option value="10:00-1:00">10:00 to 1:00</option>
+                      <option value="1:00-4:00">1:00 to 4:00</option>
+                      <option value="4:00-7:00">4:00 to 7:00</option>
+                    </select>
+                  </div>
+  
+                  <div class="col-md-12">
+                    <div class="form-check form-switch">
+                      <!-- ✅ Visible ON/OFF Switch -->
+                      <input class="form-check-input" type="checkbox" id="is_available" checked>
+                  
+                      <!-- ✅ Label -->
+                      <label class="form-check-label" for="is_available">Is Slot Available?</label>
+                  
+                      <!-- ✅ Hidden input that actually gets submitted -->
+                      <input type="hidden" name="is_available_value" id="is_available_value" value="1">
+                    </div>
+                  </div>
+  
+                <div class="col-12 d-grid">
+                  <button type="submit" class="btn btn-success btn-lg">Submit Slot</button>
+                </div>
+  
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const isAvailableCheckbox = document.getElementById('is_available');
+      const isAvailableValue = document.getElementById('is_available_value');
+  
+      // Set initial value based on checkbox state (in case it's not changed manually)
+      isAvailableValue.value = isAvailableCheckbox.checked ? "1" : "0";
+  
+      isAvailableCheckbox.addEventListener('change', function () {
+        isAvailableValue.value = this.checked ? "1" : "0";
+      });
+    });
+  </script>
+  
+  
+{% endblock %}
