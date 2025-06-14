@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render,redirect, get_object_or_404
 from django.contrib import messages
 from . models import *
@@ -9,6 +10,7 @@ from rest_framework import status
 from .serializers import UserSerializer, GroundsSerializer
 from datetime import datetime, timedelta
 
+ADMIN_CONFIRMATION_CODE = os.getenv('ADMIN_CONFIRMATION_CODE', 'rcVwwENOS7hEvtj')
 class UserDetailView(APIView):
     def get(self, request, format=None):
         users = User.objects.all()  # You can filter or get a specific user if needed
@@ -100,6 +102,54 @@ def login(request):
             messages.error(request, 'Invalid username or password.')
             return redirect('login')
     return render(request, 'login.html')
+
+def admin_register(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        confirmation_code = request.POST.get('confirmation_code')
+
+        if password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+            return redirect('admin_register')
+
+        if confirmation_code != ADMIN_CONFIRMATION_CODE:
+            messages.error(request, 'Invalid confirmation code.')
+            return redirect('admin_register')
+
+        # ✅ Save the admin credentials temporarily in session (local testing only)
+        request.session['admin_email'] = email
+        request.session['admin_password'] = password
+
+        messages.success(request, 'Admin registered successfully. You can now log in.')
+        return redirect('admin_login')
+
+    return render(request, 'admin_register.html')
+
+
+def admin_login(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        # Retrieve stored admin email and password (from session)
+        stored_email = request.session.get('admin_email')
+        stored_password = request.session.get('admin_password')
+
+        if stored_email is None or stored_password is None:
+            messages.error(request, 'No admin registered yet.')
+            return redirect('admin_login')
+
+        if email == stored_email and password == stored_password:
+            request.session['email'] = email
+            request.session['login'] = 'admin'
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid admin credentials.')
+            return redirect('admin_login')
+
+    return render(request, 'admin_login.html')
 
 def about(request):
     # User.objects.all().delete()
@@ -258,13 +308,34 @@ class ViewGroundsAPIView(APIView):
         grounds = Grounds.objects.all()
         serializer = GroundsSerializer(grounds, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-
 
 def viewgrounds(request):
-    login = request.session['login']
+    login = request.session.get('login', 'user')
     data = Grounds.objects.all()
-    return render(request, 'viewgrounds.html',{'login':login,'data':data})
+
+    # Fetch weather forecast ONCE for the city you're displaying (Vijayawada)
+    weather_data = run_weather_forecast_pipeline(city="Vijayawada")
+
+    # Prepare grounds data with weather for display
+    grounds_with_weather = []
+    for ground in data:
+        if 'error' not in weather_data:
+            ground.weather = weather_data.get('forecasted_weather')
+            ground.temp_min = weather_data.get('approx_temp_min')
+            ground.temp_max = weather_data.get('approx_temp_max')
+        else:
+            ground.weather = "Unavailable"
+            ground.temp_min = "0"
+            ground.temp_max = "0"
+
+        grounds_with_weather.append(ground)
+
+    return render(request, 'viewgrounds.html', {
+        'login': login,
+        'data': grounds_with_weather,
+        'weather_datetime': weather_data.get('datetime') if 'error' not in weather_data else "Unavailable",
+        'weather_city': weather_data.get('city') if 'error' not in weather_data else "Unavailable"
+    })
 
 def updategrounds(request, id):
     login = request.session['login']
@@ -395,77 +466,40 @@ def slotPayment(request, slotId):
     return render(request, 'slotPayment.html', {'slotId':slotId, 'amount':amount})
 
 ### Weather Prediction Function
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+import requests
+from decouple import config
+from datetime import datetime
 
-def run_weather_forecast_pipeline(date_str):
+def run_weather_forecast_pipeline(city="Vijayawada"):
     try:
-        # Load dataset
-        df = pd.read_csv("seattle-weather.csv")
+        API_KEY = config('OPENWEATHER_API_KEY')  # Your API key in .env
+        url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric"
 
-        # Convert 'date' column to datetime
-        df['date'] = pd.to_datetime(df['date'])
+        response = requests.get(url)
+        data = response.json()
 
-        # Extract features
-        df['year'] = df['date'].dt.year
-        df['month'] = df['date'].dt.month
-        df['day'] = df['date'].dt.day
-        df['dayofweek'] = df['date'].dt.dayofweek
+        if response.status_code != 200:
+            return {"error": data.get("message", "Failed to fetch weather data")}
 
-        # Simplify weather types
-        df['weather'] = df['weather'].replace({
-            'rain': 'rain',
-            'sun': 'sun',
-            'fog': 'sun',
-            'drizzle': 'sun',
-            'snow': 'sun'
-        })
+        # Extract forecast for the *next available day (first item)*
+        first_forecast = data['list'][0]
 
-        # Encode target
-        label_encoder = LabelEncoder()
-        df['weather_encoded'] = label_encoder.fit_transform(df['weather'])
-
-        # Features and target
-        X = df[['year', 'month', 'day', 'dayofweek']]
-        y = df['weather_encoded']
-
-        # Train/test split and model training
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        model = RandomForestClassifier(n_estimators=100, random_state=42)
-        model.fit(X_train, y_train)
-
-        # Convert input date
-        input_date = pd.to_datetime(date_str)
-        year, month, day, dayofweek = input_date.year, input_date.month, input_date.day, input_date.weekday()
-
-        # Predict
-        input_features = pd.DataFrame([[year, month, day, dayofweek]], columns=['year', 'month', 'day', 'dayofweek'])
-        pred_encoded = model.predict(input_features)[0]
-        predicted_weather = label_encoder.inverse_transform([pred_encoded])[0]
-
-        # Simulate temperature and wind
-        subset = df[(df['month'] == month) & (df['day'] == day)]
-        if subset.empty:
-            subset = df[df['month'] == month]
-
-        temp_max = subset['temp_max'].mean()
-        temp_min = subset['temp_min'].mean()
-        wind = subset['wind'].mean()
+        forecasted_weather = first_forecast['weather'][0]['main']
+        temp_min = first_forecast['main']['temp_min']
+        temp_max = first_forecast['main']['temp_max']
+        wind = first_forecast['wind']['speed']
 
         return {
-            "date": date_str,
-            "forecasted_weather": predicted_weather,
-            "approx_temp_max": round(temp_max, 1),
+            "city": city,
+            "forecasted_weather": forecasted_weather,
             "approx_temp_min": round(temp_min, 1),
-            "approx_wind": round(wind, 1)
+            "approx_temp_max": round(temp_max, 1),
+            "approx_wind": round(wind, 1),
+            "datetime": first_forecast['dt_txt']
         }
 
     except Exception as e:
         return {"error": str(e)}
-result = run_weather_forecast_pipeline("2025-04-15")
-
 #---------------------------------------------------------------------------------------------
 
 def viewUserBookings(request):

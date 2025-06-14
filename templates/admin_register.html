@@ -1,0 +1,125 @@
+{% extends "index.html" %}
+{% block main %}
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Registration</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    body {
+    background-color: #2560c7;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
+    }
+
+    .registration-container {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    max-width: 700px;
+    width: 100%;
+    margin: 40px auto;
+    }
+
+    .registration-container img {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto 20px;
+    }
+
+    .form-row {
+    margin-bottom: 15px;
+    }
+
+    .form-control {
+    border-radius: 5px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    }
+
+    .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+
+    .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    padding: 10px 20px;
+    width: 100%;
+    border-radius: 5px;
+    font-size: 16px;
+    }
+
+    .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    }
+
+    .text-center {
+    margin-top: 10px;
+    }
+
+    .text-center a {
+    color: #007bff;
+    text-decoration: none;
+    }
+
+    .text-center a:hover {
+    text-decoration: underline;
+    }
+</style>
+</head>
+<body>
+
+<div class="registration-container">
+    <img src="/static/img/i2.png" alt="Logo">
+    <h3 class="text-center mb-4">Admin Registration</h3>
+
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form id="admin-register-form" method="POST" action="{% url 'admin_register' %}">
+        {% csrf_token %}
+        <div class="form-row row">
+            <div class="col-md-12">
+                <input type="email" class="form-control" placeholder="Admin Email" name="email" required>
+            </div>
+        </div>
+
+        <div class="form-row row">
+            <div class="col-md-6">
+                <input type="password" class="form-control" placeholder="Password" name="password" required>
+            </div>
+
+            <div class="col-md-6">
+                <input type="password" class="form-control" placeholder="Confirm Password" name="confirm_password" required>
+            </div>
+        </div>
+
+        <!-- ✅ Confirmation Code input -->
+        <div class="form-row row">
+            <div class="col-md-12">
+                <input type="text" class="form-control" placeholder="Confirmation Code" name="confirmation_code" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Register as Admin</button>
+
+        <div class="text-center">
+            <p class="mt-3">Already have an admin account? <a href="{% url 'admin_login' %}">Login as Admin</a></p>
+        </div>
+    </form>
+</div>
+
+</body>
+{% endblock %}

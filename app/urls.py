@@ -10,6 +10,11 @@ urlpatterns = [
     path('register/',views.register, name='register'),
     path('api/register/', RegisterAPIView.as_view(), name='register-view'),
     path('login/',views.login, name='login'),
+
+    path('admin-login/', views.admin_login, name='admin_login'),
+    path('admin-register/', views.admin_register, name='admin_register'),
+
+    
     path('api/view/', UserDetailView.as_view(), name='userdetails-view'),
     path('api/view/<int:user_id>/', ParticularUserView.as_view(), name='partuserdetails-view'),
     path('api/update/<int:user_id>/', UpdateUserDetailView.as_view(), name='update-view'),
