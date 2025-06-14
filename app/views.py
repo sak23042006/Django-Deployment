@@ -370,65 +370,84 @@ def deleteground(request, id):
     return redirect('viewgrounds')
 
 def viewSlots(request):
-    login = request.session.get('login')
+    login = request.session.get('login', 'user')
     today = datetime.today().date()
     tomorrow = today + timedelta(days=1)
-    allSlots = groundSlotsModel.objects.filter(date__in=[today, tomorrow])
-    return render(request, 'viewSlots.html', {'login':login, 'allSlots':allSlots})
+
+    # Get slots for today and tomorrow
+    allSlots = groundSlotsModel.objects.filter(date__in=[today, tomorrow]).order_by('date', 'start_time')
+
+    if not allSlots.exists():
+        messages.info(request, "No slots available for today or tomorrow. Please add slots first.")
+        return redirect('addSlots')  # Ensure 'addSlots' is the name used in your urls.py
+
+    return render(request, 'viewSlots.html', {
+        'login': login,
+        'allSlots': allSlots
+    })
 
 def addSlots(request):
     login = request.session.get('login')
 
     if request.method == 'POST':
         groundName = request.POST.get('groundName')
-        getDate = request.POST.get('date')
-        is_available = True if request.POST.get('is_available_value') == '1' else False  # Fix: Compare string
+        date_str = request.POST.get('date')
+        is_available = request.POST.get('is_available_value') == '1'
+        time_range = request.POST.get('end_time')
 
-        end_time = request.POST.get('end_time')
-        formatted_date1 = datetime.strptime(getDate, '%Y-%m-%d').date()
-        formatted_date = datetime.strptime(getDate, '%Y-%m-%d').strftime('%Y-%m-%d')
-        print('DDDDDDDDDDDDD', formatted_date)
-        if Grounds.objects.filter(groundname__iexact=groundName).exists():
-            getGround = Grounds.objects.get(groundname__iexact=groundName)  # Fix: use .get() instead of .filter() when fetching one
-            getGroundLocation = getGround.location
-            getGameName = getGround.gamename
-            getPrice = getGround.price
-            result = run_weather_forecast_pipeline(formatted_date)
-            print('PPPPPPPPPPPPPPPPPPPPPPP', result)
-            print('weather Report', result['forecasted_weather'])
-
-            if result['forecasted_weather'] == 'rain':
-                getPrice = getPrice*0.5
-
-            if end_time:
-                try:
-                    start_time_str, end_time_str = end_time.split('-')
-                    start_time_str = start_time_str.strip()
-                    end_time_str = end_time_str.strip()
-                except ValueError:
-                    start_time_str, end_time_str = None, None
-            else:
-                start_time_str, end_time_str = None, None
-
-            # Create and save slot
-            groundS = groundSlotsModel(
-                groundName=groundName,
-                start_time=start_time_str,
-                end_time=end_time_str,
-                is_available=is_available,
-                location=getGroundLocation,
-                gameName = getGameName,
-                slotPrice = getPrice,
-                date = formatted_date1,
-                weatherReport=result['forecasted_weather']
-            )
-            groundS.save()
-            messages.success(request, 'Slot added sucessfully')
-            return redirect('addSlots')  # Redirect after successful creation
-        else:
-            messages.success(request, 'Ground name exits')
+        if not groundName or not date_str:
+            messages.error(request, 'Ground name and date are required.')
             return redirect('addSlots')
+
+        try:
+            formatted_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, 'Invalid date format.')
+            return redirect('addSlots')
+
+        try:
+            ground = Grounds.objects.get(groundname__iexact=groundName)
+        except Grounds.DoesNotExist:
+            messages.error(request, 'Ground not found.')
+            return redirect('addSlots')
+
+        # Weather API call
+        result = run_weather_forecast_pipeline(date_str)
+        print('Weather Result:', result)
+
+        if 'forecasted_weather' in result:
+            weather_report = result['forecasted_weather']
+            slot_price = ground.price * 0.5 if weather_report.lower() == 'rain' else ground.price
+        else:
+            weather_report = "Unavailable"
+            slot_price = ground.price
+
+        # Parse start and end time
+        start_time_str, end_time_str = None, None
+        if time_range:
+            try:
+                start_time_str, end_time_str = [t.strip() for t in time_range.split('-')]
+            except ValueError:
+                messages.warning(request, 'Invalid time range format. Expected: "HH:MM - HH:MM".')
+
+        # Create slot
+        groundSlotsModel.objects.create(
+            groundName=groundName,
+            start_time=start_time_str,
+            end_time=end_time_str,
+            is_available=is_available,
+            location=ground.location,
+            gameName=ground.gamename,
+            slotPrice=slot_price,
+            date=formatted_date,
+            weatherReport=weather_report,
+        )
+
+        messages.success(request, 'Slot added successfully.')
+        return redirect('addSlots')
+
     return render(request, 'addSlots.html', {'login': login})
+
 
 
 def getBookedSlots(request, groundname):
