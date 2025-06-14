@@ -28,7 +28,7 @@ DEBUG = False   # ✅ Change this to False for production
 
 ALLOWED_HOSTS = ['django-deployment-b9x7.onrender.com', '127.0.0.1', 'localhost','*']
 
-CSRF_TRUSTED_ORIGINS = ['https://django-deployment-b9x7.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://*']
 
 # Application definition
 
