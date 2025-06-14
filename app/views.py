@@ -548,12 +548,20 @@ def addTeam(request, paymentID):
         return redirect('addTeam', paymentID=paymentID)
     return render(request, 'addTeam.html', {'login':login, 'paymentID':paymentID, 'leaderName':getUserDetails.firstname})
 
-
 def viewTeam(request):
-    userEmail = request.session['email']
     login = request.session.get('login')
+    userEmail = request.session.get('email')
+
+    if not userEmail:
+        messages.error(request, "User not logged in.")
+        return redirect('login')
+
     getUserTeam = teamModel.objects.filter(teamLeaderMail=userEmail)
-    return render(request, 'viewTeam.html', {'login':login, 'getUserTeam':getUserTeam})
+
+    return render(request, 'viewTeam.html', {
+        'login': login,
+        'getUserTeam': getUserTeam
+    })
 
 def otherUsersBookingSlots(request):
     userEmail = request.session['email']
