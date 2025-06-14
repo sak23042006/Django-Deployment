@@ -18,7 +18,6 @@ class Migration(migrations.Migration):
                 ('is_available', models.BooleanField(default=True)),
                 ('start_time', models.TimeField(null=True)),
                 ('end_time', models.TimeField(null=True)),
-                ('weatherReport', models.CharField(max_length=100, null=True)),
                 ('groundName', models.CharField(max_length=100, null=True)),
                 ('location', models.CharField(max_length=100, null=True)),
             ],

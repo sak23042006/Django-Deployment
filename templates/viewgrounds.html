@@ -46,7 +46,25 @@
                 class="mb-2"
                 style="font-size: 1.2rem; font-weight: bold; color: #284aa7"
               >
-                <strong>Price: </strong>{{i.price}}
+                <strong>Price:</strong>
+                <span style="color: #d32f2f">
+                  ₹{{ i.adjusted_price }}
+                </span>
+                <span
+                  style="
+                    text-decoration: line-through;
+                    color: grey;
+                    font-weight: normal;
+                    font-size: 1rem;
+                  "
+                >
+                  ₹{{ i.price }}
+                </span>
+                {% if i.weather %}
+                <span style="color: #FF0000; font-size: 0.9rem">
+                  ({{ i.weather }})</span
+                >
+                {% endif %}
               </p>
 
               <p class="mb-2" style="font-size: 1rem; color: #198754">

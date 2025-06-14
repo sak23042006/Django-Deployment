@@ -53,7 +53,6 @@ class groundSlotsModel(models.Model):
     is_available = models.BooleanField(default=True)
     start_time = models.CharField(max_length=20, null=True)
     end_time = models.CharField(max_length=20, null=True)
-    weatherReport = models.CharField(max_length=100, null=True)
     groundName = models.CharField(max_length=100, null=True)
     gameName = models.CharField(max_length=100, null=True)
     location = models.CharField(max_length=100, null=True)

@@ -310,31 +310,77 @@ class ViewGroundsAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 def viewgrounds(request):
+    from datetime import datetime
+
     login = request.session.get('login', 'user')
     data = Grounds.objects.all()
 
-    # Fetch weather forecast ONCE for the city you're displaying (Vijayawada)
-    weather_data = run_weather_forecast_pipeline(city="Vijayawada")
+    # Detect if it's winter based on current month
+    current_month = datetime.now().month
+    is_winter = current_month in [12, 1, 2]  # December, January, February
 
-    # Prepare grounds data with weather for display
-    grounds_with_weather = []
+    # Group grounds by unique locations
+    grounds_by_location = {}
     for ground in data:
-        if 'error' not in weather_data:
-            ground.weather = weather_data.get('forecasted_weather')
-            ground.temp_min = weather_data.get('approx_temp_min')
-            ground.temp_max = weather_data.get('approx_temp_max')
-        else:
-            ground.weather = "Unavailable"
-            ground.temp_min = "0"
-            ground.temp_max = "0"
+        location = ground.location.strip().lower()
+        if location not in grounds_by_location:
+            grounds_by_location[location] = []
+        grounds_by_location[location].append(ground)
 
-        grounds_with_weather.append(ground)
+    # Store weather data for each unique location
+    weather_by_location = {}
+
+    for location in grounds_by_location.keys():
+        # Call weather API for this location
+        weather_data = run_weather_forecast_pipeline(city=location)
+
+        if 'error' not in weather_data:
+            weather_info = {
+                'weather': weather_data.get('forecasted_weather'),
+                'temp_min': weather_data.get('approx_temp_min'),
+                'temp_max': weather_data.get('approx_temp_max'),
+                'datetime': weather_data.get('datetime'),
+                'city': weather_data.get('city'),
+            }
+        else:
+            weather_info = {
+                'weather': "Unavailable",
+                'temp_min': "0",
+                'temp_max': "0",
+                'datetime': "Unavailable",
+                'city': location,
+            }
+        
+        weather_by_location[location] = weather_info
+
+    # Prepare grounds with their respective weather and adjusted prices
+    grounds_with_weather = []
+    for location, grounds_list in grounds_by_location.items():
+        weather_info = weather_by_location.get(location, {})
+
+        for ground in grounds_list:
+            ground.weather = weather_info.get('weather')
+            ground.temp_min = weather_info.get('temp_min')
+            ground.temp_max = weather_info.get('temp_max')
+
+            # Calculate adjusted price
+            adjusted_price = ground.price
+            weather = ground.weather.lower() if ground.weather else ""
+
+            if weather == 'rain':
+                adjusted_price = round(adjusted_price * 0.5)
+            elif is_winter or 'cold' in weather:
+                adjusted_price = round(adjusted_price * 0.75)
+
+            ground.adjusted_price = adjusted_price
+            ground.weather_datetime = weather_info.get('datetime')
+            ground.weather_city = weather_info.get('city')
+
+            grounds_with_weather.append(ground)
 
     return render(request, 'viewgrounds.html', {
         'login': login,
         'data': grounds_with_weather,
-        'weather_datetime': weather_data.get('datetime') if 'error' not in weather_data else "Unavailable",
-        'weather_city': weather_data.get('city') if 'error' not in weather_data else "Unavailable"
     })
 
 def updategrounds(request, id):
@@ -370,6 +416,9 @@ def deleteground(request, id):
     return redirect('viewgrounds')
 
 def viewSlots(request):
+    print('viewSlots called')
+    from pprint import pprint
+
     login = request.session.get('login', 'user')
     today = datetime.today().date()
     tomorrow = today + timedelta(days=1)
@@ -379,12 +428,63 @@ def viewSlots(request):
 
     if not allSlots.exists():
         messages.info(request, "No slots available for today or tomorrow. Please add slots first.")
-        return redirect('addSlots')  # Ensure 'addSlots' is the name used in your urls.py
+        return redirect('addSlots')
+
+    # Detect if it's winter based on current month
+    current_month = datetime.now().month
+    is_winter = current_month in [12, 1, 2]  # December, January, February
+
+    # Call weather API for Vijayawada once
+    weather_data = run_weather_forecast_pipeline(city="Vijayawada")
+
+    forecasted_weather = weather_data.get('forecasted_weather', '').lower() if weather_data else ''
+    temp_min = weather_data.get('approx_temp_min', 25) if weather_data else 25
+    weather_datetime = weather_data.get('datetime', "Unavailable") if weather_data else "Unavailable"
+    weather_city = weather_data.get('city', "Unavailable") if weather_data else "Unavailable"
+
+    # Determine discount
+    discount_reason = None
+    discount_percentage = 0
+
+    if forecasted_weather == 'rain':
+        discount_reason = "Rain"
+        discount_percentage = 50
+    elif is_winter or 'cold' in forecasted_weather:
+        discount_reason = "Cold"
+        discount_percentage = 25
+
+    updated_slots = []
+    for slot in allSlots:
+        original_price = slot.slotPrice or 0
+        adjusted_price = original_price
+
+        if discount_percentage > 0:
+            adjusted_price = round(original_price * (1 - discount_percentage / 100))
+
+        slot.original_price = original_price
+        slot.adjusted_price = adjusted_price
+        slot.discount_reason = discount_reason or ""
+
+        # Log each slot clearly
+        print({
+            'Slot ID': slot.slotId,
+            'Ground': slot.groundName,
+            'Original Price': original_price,
+            'Adjusted Price': adjusted_price,
+            'Discount Reason': slot.discount_reason
+        })
+
+        updated_slots.append(slot)
 
     return render(request, 'viewSlots.html', {
         'login': login,
-        'allSlots': allSlots
+        'allSlots': updated_slots,
+        'weather_datetime': weather_datetime,
+        'weather_city': weather_city,
+        'discount_reason': discount_reason,
+        'discount_percentage': discount_percentage,
     })
+
 
 def addSlots(request):
     login = request.session.get('login')
@@ -411,17 +511,6 @@ def addSlots(request):
             messages.error(request, 'Ground not found.')
             return redirect('addSlots')
 
-        # Weather API call
-        result = run_weather_forecast_pipeline(date_str)
-        print('Weather Result:', result)
-
-        if 'forecasted_weather' in result:
-            weather_report = result['forecasted_weather']
-            slot_price = ground.price * 0.5 if weather_report.lower() == 'rain' else ground.price
-        else:
-            weather_report = "Unavailable"
-            slot_price = ground.price
-
         # Parse start and end time
         start_time_str, end_time_str = None, None
         if time_range:
@@ -430,7 +519,7 @@ def addSlots(request):
             except ValueError:
                 messages.warning(request, 'Invalid time range format. Expected: "HH:MM - HH:MM".')
 
-        # Create slot
+        # Save original ground price ONLY — no weather, no discount
         groundSlotsModel.objects.create(
             groundName=groundName,
             start_time=start_time_str,
@@ -438,9 +527,8 @@ def addSlots(request):
             is_available=is_available,
             location=ground.location,
             gameName=ground.gamename,
-            slotPrice=slot_price,
+            slotPrice=ground.price,
             date=formatted_date,
-            weatherReport=weather_report,
         )
 
         messages.success(request, 'Slot added successfully.')
@@ -450,17 +538,78 @@ def addSlots(request):
 
 
 
+
 def getBookedSlots(request, groundname):
     login = request.session.get('login')
-    getSlots = groundSlotsModel.objects.filter(groundName=groundname)
-    return render(request, 'viewSlots.html', {'login': login, 'allSlots':getSlots})
+
+    # Fetch slots for the given ground
+    getSlots = groundSlotsModel.objects.filter(groundName=groundname).order_by('date', 'start_time')
+
+    if not getSlots.exists():
+        messages.info(request, f"No slots found for {groundname}.")
+        return redirect('viewGrounds')  # Update if needed
+
+    # Get the location from the first slot (assuming same location for all slots of that ground)
+    ground_location = getSlots.first().location if getSlots.first() else "Vijayawada"
+
+    # Call weather API for that location once
+    weather_data = run_weather_forecast_pipeline(city=ground_location)
+
+    forecasted_weather = weather_data.get('forecasted_weather', '').lower() if weather_data else ''
+    weather_datetime = weather_data.get('datetime', "Unavailable") if weather_data else "Unavailable"
+    weather_city = weather_data.get('city', ground_location) if weather_data else ground_location
+
+    # Determine if it's winter based on current month
+    current_month = datetime.now().month
+    is_winter = current_month in [12, 1, 2]  # December, January, February
+
+    # Determine discount reason & percentage
+    discount_reason = None
+    discount_percentage = 0
+
+    if forecasted_weather == 'rain':
+        discount_reason = "Rain"
+        discount_percentage = 50
+    elif is_winter or 'cold' in forecasted_weather:
+        discount_reason = "Cold"
+        discount_percentage = 25
+
+    # Prepare slots with adjusted prices
+    updated_slots = []
+    for slot in getSlots:
+        original_price = slot.slotPrice or 0
+        adjusted_price = original_price
+
+        if discount_percentage > 0:
+            adjusted_price = round(original_price * (1 - discount_percentage / 100))
+
+        slot.original_price = original_price
+        slot.adjusted_price = adjusted_price
+        slot.discount_reason = discount_reason or ""
+
+        updated_slots.append(slot)
+
+    return render(request, 'viewSlots.html', {
+        'login': login,
+        'allSlots': updated_slots,
+        'weather_datetime': weather_datetime,
+        'weather_city': weather_city,
+        'discount_reason': discount_reason,
+        'discount_percentage': discount_percentage,
+    })
+
+
 
 def slotPayment(request, slotId):
-    print('3333333333333', slotId)
     userEmail = request.session['email']
-    print('mmmmmmmmmmm', userEmail)
     getSlotDetails = groundSlotsModel.objects.get(slotId=slotId)
-    amount = getSlotDetails.slotPrice
+
+    # ✅ NEW: Get price from URL if provided, fallback to slot price
+    try:
+        amount = int(request.GET.get('price', getSlotDetails.slotPrice))
+    except (TypeError, ValueError):
+        amount = getSlotDetails.slotPrice  # Fallback if price is invalid
+
     if request.method == 'POST':
         getCardNumber = request.POST.get('cardNumber')
         getHolderName = request.POST.get('cardHolder')
@@ -480,9 +629,11 @@ def slotPayment(request, slotId):
         getSlotDetails.is_available = False
         getSlotDetails.save()
 
-        messages.success(request, 'payment successfull')
-        return redirect('slotPayment', slotId=slotId) 
-    return render(request, 'slotPayment.html', {'slotId':slotId, 'amount':amount})
+        messages.success(request, 'Payment successful')
+        return redirect('slotPayment', slotId=slotId)
+
+    return render(request, 'slotPayment.html', {'slotId': slotId, 'amount': amount})
+
 
 ### Weather Prediction Function
 import requests
@@ -491,7 +642,7 @@ from datetime import datetime
 
 def run_weather_forecast_pipeline(city="Vijayawada"):
     try:
-        API_KEY = config('OPENWEATHER_API_KEY')  # Your API key in .env
+        API_KEY = config('OPENWEATHER_API_KEY')
         url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={API_KEY}&units=metric"
 
         response = requests.get(url)

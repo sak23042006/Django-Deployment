@@ -1,59 +1,95 @@
+{% extends "home.html" %} {% block main %}
 
-{% extends "home.html" %}
-{% block main %}
-
- <!-- Service Start -->
- <div class="container-fluid service py-5">
-    <div class="container py-5">
-        <div class="text-center mx-auto pb-5 wow fadeInUp" data-wow-delay="0.2s" style="max-width: 800px;">
-            <h4 class="text-primary">View all slots</h4>
-            <h1 class="display-4 mb-4">We Provide Best Services</h1>
-            <p class="mb-0">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Tenetur adipisci facilis cupiditate recusandae aperiam temporibus corporis itaque quis facere, numquam, ad culpa deserunt sint dolorem autem obcaecati, ipsam mollitia hic.
-            </p>
-        </div>
-        <div class="row g-4 justify-content-center">
-            {% for i in allSlots %}
-            <div class="col-md-6 col-lg-6 col-xl-3 wow fadeInUp" data-wow-delay="0.2s">
-                <div class="service-item">
-                    <div class="service-img" style="position: relative;">
-                        <!-- Ensure the image is fully visible while maintaining size -->
-                        <!-- <img src="/{{i.image}}" class="img-fluid rounded-top w-100" alt="" 
-                             style="height: 200px; width: 100%; object-fit: contain;"> -->
-                        <div class="service-icon p-3">
-                            <i class="fa fa-trophy fa-2x"></i>
-                        </div>
-                    </div>
-                    <div class="service-content p-4">
-                        <div class="service-content-inner">
-                            <a href="#" class="d-inline-block h4 mb-4">{{i.gameName}}</a>
-                            <p class="mb-2"><strong>Ground Name: </strong>{{i.groundName}}</p>
-                            <p class="mb-2"><strong>Location: </strong>{{i.location}}</p>
-                            <p class="mb-2"><strong>Date: </strong>{{i.date}}</p>
-                            <p class="mb-2">Strat time - {{i.start_time}}</p>
-                            <p class="mb-2">End time - {{i.end_time}}</p>
-                            {% if login == 'user' %}
-                            <p class="mb-2" style="font-size: 1.2rem; font-weight: bold; color: #284aa7;"><strong>Price: </strong>{{i.slotPrice}}</p>
-                            {% if i.is_available%}
-                            <a class="btn btn-primary rounded-pill py-2 px-4 mb-4" href="{% url 'slotPayment' i.slotId %}">Book Now</a>
-                            {% else %}
-                            <a class="btn btn-danger rounded-pill py-2 px-4 mb-4" disabled>Booked</a>
-                            {% endif %}
-                            {% elif login == 'admin' %}
-                            <div class="update" style="display: flex; ">
-                            <a class="btn btn-danger rounded-pill py-2 px-4 w-100" href="{% url 'deleteSlot' i.slotId %}">Delete</a>
-                        </div>
-                        {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-            <div class="col-12 text-center wow fadeInUp" data-wow-delay="0.2s">
-                <a class="btn btn-primary rounded-pill py-3 px-5" href="#">More Services</a>
-            </div>
-        </div>
-        
+<!-- Service Start -->
+<div class="container-fluid service py-5">
+  <div class="container py-5">
+    <div
+      class="text-center mx-auto pb-5 wow fadeInUp"
+      data-wow-delay="0.2s"
+      style="max-width: 800px"
+    >
+      <h4 class="text-primary">View all slots</h4>
+      <h1 class="display-4 mb-4">We Provide Best Services</h1>
+      <p class="mb-0">
+        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Tenetur
+        adipisci facilis cupiditate recusandae aperiam temporibus corporis
+        itaque quis facere, numquam, ad culpa deserunt sint dolorem autem
+        obcaecati, ipsam mollitia hic.
+      </p>
     </div>
+    <div class="row g-4 justify-content-center">
+      {% for i in allSlots %}
+      <div
+        class="col-md-6 col-lg-6 col-xl-3 wow fadeInUp"
+        data-wow-delay="0.2s"
+      >
+        <div class="service-item">
+          <div class="service-img" style="position: relative">
+            <!-- Ensure the image is fully visible while maintaining size -->
+            <!-- <img src="/{{i.image}}" class="img-fluid rounded-top w-100" alt="" 
+                             style="height: 200px; width: 100%; object-fit: contain;"> -->
+            <div class="service-icon p-3">
+              <i class="fa fa-trophy fa-2x"></i>
+            </div>
+          </div>
+          <div class="service-content p-4">
+            <div class="service-content-inner">
+              <a href="#" class="d-inline-block h4 mb-4">{{i.gameName}}</a>
+              <p class="mb-2"><strong>Ground Name: </strong>{{i.groundName}}</p>
+              <p class="mb-2"><strong>Location: </strong>{{i.location}}</p>
+              <p class="mb-2"><strong>Date: </strong>{{i.date}}</p>
+              <p class="mb-2">Strat time - {{i.start_time}}</p>
+              <p class="mb-2">End time - {{i.end_time}}</p>
+              {% if login == 'user' %}
+              <p
+                class="mb-2"
+                style="font-size: 1.2rem; font-weight: bold; color: #284aa7"
+              >
+                <strong>Price: </strong>
+                {% if i.original_price != i.adjusted_price %}
+                <span style="color: #284aa7;"
+                  >₹{{ i.adjusted_price }}</span
+                >
+                <span style="text-decoration: line-through; color: #999"
+                  >₹{{ i.original_price }}</span
+                >
+                <span style="color: #FF0000; font-size: 0.9rem"
+                  >({{ i.discount_reason }})</span
+                >
+                {% else %} ₹{{ i.adjusted_price }} {% endif %}
+              </p>
+
+              {% if i.is_available%}
+              <a
+                class="btn btn-primary rounded-pill py-2 px-4 mb-4"
+                href="{% url 'slotPayment' i.slotId %}?price={{ i.adjusted_price }}"
+                >Book Now</a
+              >
+              {% else %}
+              <a class="btn btn-danger rounded-pill py-2 px-4 mb-4" disabled
+                >Booked</a
+              >
+              {% endif %} {% elif login == 'admin' %}
+              <div class="update" style="display: flex">
+                <a
+                  class="btn btn-danger rounded-pill py-2 px-4 w-100"
+                  href="{% url 'deleteSlot' i.slotId %}"
+                  >Delete</a
+                >
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="col-12 text-center wow fadeInUp" data-wow-delay="0.2s">
+        <a class="btn btn-primary rounded-pill py-3 px-5" href="#"
+          >More Services</a
+        >
+      </div>
+    </div>
+  </div>
 </div>
 <!-- Service End -->
 
