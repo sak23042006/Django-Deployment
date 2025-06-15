@@ -25,3 +25,7 @@ media/
 # OS
 .DS_Store
 Thumbs.db
+
+# Uploaded images (do not track in Git)
+static/GroundImages/
+static/UserProfiles/

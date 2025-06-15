@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer, GroundsSerializer
 from datetime import datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
 
 ADMIN_CONFIRMATION_CODE = os.getenv('ADMIN_CONFIRMATION_CODE', 'rcVwwENOS7hEvtj')
 class UserDetailView(APIView):
@@ -273,8 +274,6 @@ class AddGroundAPIView(APIView):
 
 def addground(request):
     login =  request.session['login']
-   
-
     return render(request, 'addgrounds.html',{'login':login})
 
 
@@ -309,17 +308,17 @@ class ViewGroundsAPIView(APIView):
         serializer = GroundsSerializer(grounds, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
 def viewgrounds(request):
     from datetime import datetime
 
     login = request.session.get('login', 'user')
     data = Grounds.objects.all()
 
-    # Detect if it's winter based on current month
     current_month = datetime.now().month
-    is_winter = current_month in [12, 1, 2]  # December, January, February
+    is_winter = current_month in [12, 1, 2]
 
-    # Group grounds by unique locations
     grounds_by_location = {}
     for ground in data:
         location = ground.location.strip().lower()
@@ -327,11 +326,9 @@ def viewgrounds(request):
             grounds_by_location[location] = []
         grounds_by_location[location].append(ground)
 
-    # Store weather data for each unique location
     weather_by_location = {}
 
     for location in grounds_by_location.keys():
-        # Call weather API for this location
         weather_data = run_weather_forecast_pipeline(city=location)
 
         if 'error' not in weather_data:
@@ -353,7 +350,6 @@ def viewgrounds(request):
         
         weather_by_location[location] = weather_info
 
-    # Prepare grounds with their respective weather and adjusted prices
     grounds_with_weather = []
     for location, grounds_list in grounds_by_location.items():
         weather_info = weather_by_location.get(location, {})
@@ -363,16 +359,17 @@ def viewgrounds(request):
             ground.temp_min = weather_info.get('temp_min')
             ground.temp_max = weather_info.get('temp_max')
 
-            # Calculate adjusted price
-            adjusted_price = ground.price
+            adjusted_price = Decimal(ground.price)
             weather = ground.weather.lower() if ground.weather else ""
 
             if weather == 'rain':
-                adjusted_price = round(adjusted_price * 0.5)
+                adjusted_price = adjusted_price * Decimal('0.5')
             elif is_winter or 'cold' in weather:
-                adjusted_price = round(adjusted_price * 0.75)
+                adjusted_price = adjusted_price * Decimal('0.75')
 
-            ground.adjusted_price = adjusted_price
+            # Round to 2 decimal places (or 0 if you want only rupees)
+            ground.adjusted_price = adjusted_price.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+
             ground.weather_datetime = weather_info.get('datetime')
             ground.weather_city = weather_info.get('city')
 
@@ -415,15 +412,12 @@ def deleteground(request, id):
 
     return redirect('viewgrounds')
 
-def viewSlots(request):
-    print('viewSlots called')
-    from pprint import pprint
+def viewSlots(request): 
 
     login = request.session.get('login', 'user')
     today = datetime.today().date()
     tomorrow = today + timedelta(days=1)
 
-    # Get slots for today and tomorrow
     allSlots = groundSlotsModel.objects.filter(date__in=[today, tomorrow]).order_by('date', 'start_time')
 
     if not allSlots.exists():
@@ -432,47 +426,45 @@ def viewSlots(request):
 
     # Detect if it's winter based on current month
     current_month = datetime.now().month
-    is_winter = current_month in [12, 1, 2]  # December, January, February
+    is_winter = current_month in [12, 1, 2]
 
-    # Call weather API for Vijayawada once
-    weather_data = run_weather_forecast_pipeline(city="Vijayawada")
+    # Use the location of the first slot (assuming all slots are from the same ground)
+    first_slot_location = allSlots.first().location.strip().lower() if allSlots.first().location else "vijayawada"
 
-    forecasted_weather = weather_data.get('forecasted_weather', '').lower() if weather_data else ''
-    temp_min = weather_data.get('approx_temp_min', 25) if weather_data else 25
-    weather_datetime = weather_data.get('datetime', "Unavailable") if weather_data else "Unavailable"
-    weather_city = weather_data.get('city', "Unavailable") if weather_data else "Unavailable"
+    # Call weather API ONCE using the location of the slot
+    weather_data = run_weather_forecast_pipeline(city=first_slot_location)
+
+    if 'error' not in weather_data:
+        forecasted_weather = weather_data.get('forecasted_weather', '').lower()
+        temp_min = weather_data.get('approx_temp_min', 25)
+        weather_datetime = weather_data.get('datetime', "Unavailable")
+        weather_city = weather_data.get('city', first_slot_location)
+    else:
+        forecasted_weather = ''
+        temp_min = 25
+        weather_datetime = "Unavailable"
+        weather_city = first_slot_location
 
     # Determine discount
     discount_reason = None
-    discount_percentage = 0
+    discount_multiplier = Decimal('1.0')
 
     if forecasted_weather == 'rain':
         discount_reason = "Rain"
-        discount_percentage = 50
+        discount_multiplier = Decimal('0.5')
     elif is_winter or 'cold' in forecasted_weather:
         discount_reason = "Cold"
-        discount_percentage = 25
+        discount_multiplier = Decimal('0.75')
 
     updated_slots = []
     for slot in allSlots:
-        original_price = slot.slotPrice or 0
-        adjusted_price = original_price
-
-        if discount_percentage > 0:
-            adjusted_price = round(original_price * (1 - discount_percentage / 100))
+        original_price = Decimal(slot.slotPrice or 0)
+        adjusted_price = original_price * discount_multiplier
+        adjusted_price = adjusted_price.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
 
         slot.original_price = original_price
         slot.adjusted_price = adjusted_price
         slot.discount_reason = discount_reason or ""
-
-        # Log each slot clearly
-        print({
-            'Slot ID': slot.slotId,
-            'Ground': slot.groundName,
-            'Original Price': original_price,
-            'Adjusted Price': adjusted_price,
-            'Discount Reason': slot.discount_reason
-        })
 
         updated_slots.append(slot)
 
@@ -482,8 +474,9 @@ def viewSlots(request):
         'weather_datetime': weather_datetime,
         'weather_city': weather_city,
         'discount_reason': discount_reason,
-        'discount_percentage': discount_percentage,
+        'discount_percentage': int((1 - float(discount_multiplier)) * 100) if discount_reason else 0,
     })
+
 
 
 def addSlots(request):
@@ -638,7 +631,6 @@ def slotPayment(request, slotId):
 ### Weather Prediction Function
 import requests
 from decouple import config
-from datetime import datetime
 
 def run_weather_forecast_pipeline(city="Vijayawada"):
     try:
