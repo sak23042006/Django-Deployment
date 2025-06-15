@@ -12,6 +12,9 @@ from django.contrib.auth.hashers import check_password
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
+import cloudinary.uploader
+from cloudinary.exceptions import Error as CloudinaryError
+
 ADMIN_CONFIRMATION_CODE = os.getenv('ADMIN_CONFIRMATION_CODE', 'rcVwwENOS7hEvtj')
 class UserDetailView(APIView):
     def get(self, request, format=None):
@@ -25,7 +28,13 @@ class ParticularUserView(APIView):
         user = get_object_or_404(User, id=user_id)
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
+def upload_to_cloudinary(image_file):
+    try:
+        result = cloudinary.uploader.upload(image_file)
+        return result.get('secure_url')
+    except CloudinaryError as e:
+        raise e
 
 class UserDeleteView(APIView):
     
@@ -197,70 +206,65 @@ def profile(request):
     
 
 def updateprofile(request):
-   
     login = request.session.get('login', None)
     email = request.session.get('email', None)
-    
-   
     user = User.objects.get(email=email)
-    
-   
     data = UserProfile.objects.filter(user=user.id)
-    
+
     if request.method == 'POST':
-       
-        profile_image = request.FILES.get('profileImage') 
-        
-       
+        profile_image = request.FILES.get('profileImage')  # file from form
+
         game_type = request.POST.get('game_type')
         indoor_game = request.POST.get('indoor_game')
         outdoor_game = request.POST.get('outdoor_game')
-        
-       
         address = request.POST.get('address')
         bio = request.POST.get('bio')
+
         if game_type == 'indoor':
-            game = indoor_game 
+            game = indoor_game
         elif game_type == 'outdoor':
-            game = outdoor_game 
+            game = outdoor_game
         else:
-            game = None 
-       
+            game = None
+
+        # Upload image to Cloudinary if present
+        profile_url = None
+        if profile_image:
+            try:
+                profile_url = upload_to_cloudinary(profile_image)
+                print("url" , profile_url)
+            except Exception as e:
+                # Handle upload failure (optional: add messages or error response)
+                profile_url = None
+
         if data:
             profile = data[0]
-           
             profile.address = address
             profile.bio = bio
             profile.game_type = game_type
-            if game_type == 'indoor':
-                profile.game = indoor_game
-               
-            elif game_type == 'outdoor':
-                profile.game = outdoor_game
-               
-            if profile_image:
-                profile.profile = profile_image 
+            profile.game = game
+
+            # Update profile URL if new image uploaded
+            if profile_url:
+                profile.profile = profile_url
+
             profile.save()
         else:
             profile = UserProfile.objects.create(
                 user=user,
-               
                 address=address,
                 bio=bio,
                 game_type=game_type,
                 game=game,
-                profile_image=profile_image
+                profile=profile_url  # store URL here
             )
-        
-       
+
         return render(request, 'updateprofile.html', {'data': [profile], 'login': login})
-    
+
     else:
-       
         if data:
             userdata = data
         else:
-           
             UserProfile.objects.create(user=user)
             userdata = UserProfile.objects.filter(user=user.id)
 
@@ -276,14 +280,23 @@ def logout(request):
 
 class AddGroundAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        # Create a serializer instance with the incoming data
-        serializer = GroundsSerializer(data=request.data)
-        
+        data = request.data.copy()  # mutable copy of QueryDict
+
+        image_file = request.FILES.get('image')
+        if image_file:
+            try:
+                image_url = upload_to_cloudinary(image_file)
+                data['image'] = image_url  # replace image file with URL
+            except Exception:
+                return Response({"errors": "Image upload failed."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            data['image'] = None  # or handle missing image case if required
+
+        serializer = GroundsSerializer(data=data)
         if serializer.is_valid():
-            # Save the new Ground to the database
             serializer.save()
             return Response({"message": "Ground added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        
+
         return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -398,6 +411,8 @@ def viewgrounds(request):
 def updategrounds(request, id):
     login = request.session['login']
     data = Grounds.objects.filter(id=id)
+    up = Grounds.objects.get(id=id)
+
     if request.method == 'POST':
         groudname = request.POST['groundname']
         gamename = request.POST['gamename']
@@ -405,20 +420,29 @@ def updategrounds(request, id):
         location = request.POST['location']
         slots = request.POST['slots']
         image = request.FILES.get('image')  # Using .get() to avoid KeyError
-        up = Grounds.objects.get(id=id)
+
         up.groundname = groudname
-        up.gamename =gamename
+        up.gamename = gamename
         up.price = price
         up.location = location
         up.slots = slots
+
         if image:
-            up.image = image
+            max_size = 5 * 1024 * 1024  # 2MB limit
+            if image.size > max_size:
+                messages.error(request, 'Image file size should not exceed 2MB.')
+                return render(request, 'updateground.html', {'login': login, 'id': id, 'data': data})
+
+            # Upload image to Cloudinary and update the image field with the URL
+            upload_result = cloudinary.uploader.upload(image)
+            up.image = upload_result.get('secure_url')
+
         up.save()
         messages.success(request, 'Updated Successfully!')
         return redirect('updategrounds', id)
 
+    return render(request, 'updateground.html', {'login': login, 'id': id, 'data': data})
 
-    return render(request, 'updateground.html',{'login':login,'id':id, 'data':data})
 
 
 def deleteground(request, id):

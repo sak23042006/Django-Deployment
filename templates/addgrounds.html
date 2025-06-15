@@ -1,177 +1,216 @@
-{% extends "home.html" %}
-{% block main %}
+{% extends "home.html" %} {% block main %}
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ground Booking Form</title>
-    <style>
-        /* Basic Styling */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #2056b3;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ground Booking Form</title>
+  <style>
+    /* Basic Styling */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2056b3;
+      margin: 0;
+      padding: 0;
+    }
 
-        .form-container {
-            width: 100%;
-            max-width: 700px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+    .form-container {
+      width: 100%;
+      max-width: 700px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
 
-        label {
-            font-weight: bold;
-            color: #333;
-        }
+    label {
+      font-weight: bold;
+      color: #333;
+    }
 
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
 
-        input[type="file"] {
-            padding: 5px;
-        }
+    input[type="file"] {
+      padding: 5px;
+    }
 
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
 
-        button:hover {
-            background-color: #0056b3;
-        }
+    button:hover {
+      background-color: #0056b3;
+    }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+    .form-group {
+      margin-bottom: 15px;
+    }
 
-        /* Media Queries for Responsiveness */
-        @media (max-width: 768px) {
-            .form-container {
-                padding: 20px;
-                margin: 10px;
-            }
+    /* Media Queries for Responsiveness */
+    @media (max-width: 768px) {
+      .form-container {
+        padding: 20px;
+        margin: 10px;
+      }
 
-            h2 {
-                font-size: 1.5rem;
-            }
+      h2 {
+        font-size: 1.5rem;
+      }
 
-            /* Adjust input, select, textarea size on small screens */
-            input, select, textarea {
-                font-size: 0.9rem;
-                padding: 8px;
-            }
+      /* Adjust input, select, textarea size on small screens */
+      input,
+      select,
+      textarea {
+        font-size: 0.9rem;
+        padding: 8px;
+      }
 
-            button {
-                font-size: 1rem;
-                padding: 10px 18px;
-            }
+      button {
+        font-size: 1rem;
+        padding: 10px 18px;
+      }
 
-            /* Adjust margins for mobile view */
-            .form-group {
-                margin-bottom: 10px;
-            }
-        }
-
-    </style>
+      /* Adjust margins for mobile view */
+      .form-group {
+        margin-bottom: 10px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="form-container">
-        <h2>Add Ground</h2>
-        <div id="message"></div>
-        <form id="ground-form" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="groundname">Ground Name</label>
-                <input type="text" id="groundname" name="groundname" required placeholder="Enter the ground name">
-            </div>
-        
-            <div class="form-group">
-                <label for="gamename">Game Name</label>
-                <input type="text" id="gamename" name="gamename" required placeholder="Enter the game name">
-            </div>
-        
-            <div class="form-group">
-                <label for="location">Location</label>
-                <input type="text" id="location" name="location" required placeholder="Enter the location of the ground">
-            </div>
-        
-            <div class="form-group">
-                <label for="price">Price</label>
-                <input type="number" id="price" name="price" required placeholder="Enter the price per slot" min="1">
-            </div>
-        
-            <div class="form-group">
-                <label for="slots">No. of Slots</label>
-                <input type="number" id="slots" name="slots" required placeholder="Enter the number of available slots" min="1">
-            </div>
-        
-            <div class="form-group">
-                <label for="image">Upload Ground Image</label>
-                <input type="file" id="image" name="image" accept="image/*" required>
-            </div>
-        
-            <div class="form-group">
-                <center><button type="submit">Submit</button></center>
-            </div>
-        </form>
-        
-    
-        
-    </div>
-    
-    <script>
-       document.getElementById('ground-form').addEventListener('submit', function (e) {
-    e.preventDefault(); // Prevent the default form submission
+  <div class="form-container">
+    <h2>Add Ground</h2>
+    <div id="message"></div>
+    <form id="ground-form" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="groundname">Ground Name</label>
+        <input
+          type="text"
+          id="groundname"
+          name="groundname"
+          required
+          placeholder="Enter the ground name"
+        />
+      </div>
 
-    const formData = new FormData(this); // This automatically handles files
+      <div class="form-group">
+        <label for="gamename">Game Name</label>
+        <input
+          type="text"
+          id="gamename"
+          name="gamename"
+          required
+          placeholder="Enter the game name"
+        />
+      </div>
 
-    // Send POST request to API
-    fetch('/api/grounds/add/', {
-        method: 'POST',
-        body: formData // The FormData object will automatically set the correct headers
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Display success message
-        if (data.message) {
-            document.getElementById('message').innerHTML = '<center><div class="alert alert-success">' + data.message + '</div></center>';
-            // Reset the form
-            document.getElementById('ground-form').reset();
-        } else {
-            // Handle validation errors
-            const errors = Object.values(data.errors || {});
-            let errorMessages = errors.map(error => '<p>' + error.join(', ') + '</p>').join('');
-            document.getElementById('message').innerHTML = '<center><div class="alert alert-danger">' + errorMessages + '</div></center>';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-});
+      <div class="form-group">
+        <label for="location">Location</label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          required
+          placeholder="Enter the location of the ground"
+        />
+      </div>
 
-    </script>
-    
-    </body>
-    {% endblock %}
+      <div class="form-group">
+        <label for="price">Price</label>
+        <input
+          type="number"
+          id="price"
+          name="price"
+          required
+          placeholder="Enter the price per slot"
+          min="1"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="slots">No. of Slots</label>
+        <input
+          type="number"
+          id="slots"
+          name="slots"
+          required
+          placeholder="Enter the number of available slots"
+          min="1"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="image">Upload Ground Image</label>
+        <input type="file" id="image" name="image" accept="image/*" required />
+      </div>
+
+      <div class="form-group">
+        <center><button type="submit">Submit</button></center>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document
+      .getElementById("ground-form")
+      .addEventListener("submit", function (e) {
+        e.preventDefault() // Prevent the default form submission
+
+        const formData = new FormData(this) // This automatically handles files
+
+        // Send POST request to API
+        fetch("/api/grounds/add/", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Display success message
+            if (data.message) {
+              document.getElementById("message").innerHTML =
+                '<center><div class="alert alert-success">' +
+                data.message +
+                "</div></center>"
+              // Reset the form
+              document.getElementById("ground-form").reset()
+            } else {
+              // Handle validation errors
+              const errors = Object.values(data.errors || {})
+              let errorMessages = errors
+                .map((error) => "<p>" + error.join(", ") + "</p>")
+                .join("")
+              document.getElementById("message").innerHTML =
+                '<center><div class="alert alert-danger">' +
+                errorMessages +
+                "</div></center>"
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error)
+          })
+      })
+  </script>
+</body>
+{% endblock %}

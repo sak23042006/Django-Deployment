@@ -26,7 +26,7 @@ class User(models.Model):
 
 class UserProfile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    profile = models.FileField(upload_to=os.path.join('static', 'UserProfiles'))
+    profile = models.URLField(null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     game = models.CharField(max_length=100, null=True, blank=True)
     address = models.CharField(max_length=100, null=True, blank=True)
@@ -45,7 +45,7 @@ class Grounds(models.Model):
     location = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))])
     slots = models.IntegerField()
-    image = models.FileField(upload_to=os.path.join('static', 'GroundImages'))
+    image = models.URLField(blank=True, null=True)
     status = models.CharField(max_length=100, default='Available')
 
     def __str__(self):

@@ -27,7 +27,7 @@
           <div class="service-img" style="position: relative">
             <!-- Ensure the image is fully visible while maintaining size -->
             <img
-              src="/{{i.image}}"
+              src="{{ i.image }}"
               class="img-fluid rounded-top w-100"
               alt=""
               style="height: 200px; width: 100%; object-fit: contain"
@@ -41,53 +41,50 @@
               <a href="#" class="d-inline-block h4 mb-4">{{i.gamename}}</a>
               <p class="mb-2"><strong>Ground Name: </strong>{{i.groundname}}</p>
               <p class="mb-2"><strong>Location: </strong>{{i.location}}</p>
-              {% if login == 'user' %}
-                {% if i.price != i.adjusted_price %}
-                <p
-                  class="mb-2"
-                  style="font-size: 1.2rem; font-weight: bold; color: #284aa7"
+              {% if login == 'user' %} {% if i.price != i.adjusted_price %}
+              <p
+                class="mb-2"
+                style="font-size: 1.2rem; font-weight: bold; color: #284aa7"
+              >
+                <strong>Price:</strong>
+                <span style="color: #d32f2f"> ₹{{ i.adjusted_price }} </span>
+                <span
+                  style="
+                    text-decoration: line-through;
+                    color: grey;
+                    font-weight: normal;
+                    font-size: 1rem;
+                  "
                 >
-                  <strong>Price:</strong>
-                  <span style="color: #d32f2f">
-                    ₹{{ i.adjusted_price }}
-                  </span>
-                  <span
-                    style="
-                      text-decoration: line-through;
-                      color: grey;
-                      font-weight: normal;
-                      font-size: 1rem;
-                    "
-                  >
-                    ₹{{ i.price }}
-                  </span>
-                  {% if i.weather %}
-                  <span style="color: #FF0000; font-size: 0.9rem">
-                    ({{ i.weather }})
-                  </span>
-                  {% endif %}
-                </p>
-                {% else %}
-                <p
-                  class="mb-2"
-                  style="font-size: 1.2rem; font-weight: bold; color: #284aa7"
-                >
-                  <strong>Price:</strong> ₹{{ i.price }}
-                </p>
+                  ₹{{ i.price }}
+                </span>
+                {% if i.weather %}
+                <span style="color: #ff0000; font-size: 0.9rem">
+                  ({{ i.weather }})
+                </span>
                 {% endif %}
+              </p>
+              {% else %}
+              <p
+                class="mb-2"
+                style="font-size: 1.2rem; font-weight: bold; color: #284aa7"
+              >
+                <strong>Price:</strong> ₹{{ i.price }}
+              </p>
+              {% endif %}
 
-                <p class="mb-2" style="font-size: 1rem; color: #198754">
-                  <strong>Weather:</strong> {{ i.weather|title }}
-                  <small style="color: #6c757d">
-                    (Temp: {{ i.temp_min }}°C - {{ i.temp_max }}°C)
-                  </small>
-                </p>
+              <p class="mb-2" style="font-size: 1rem; color: #198754">
+                <strong>Weather:</strong> {{ i.weather|title }}
+                <small style="color: #6c757d">
+                  (Temp: {{ i.temp_min }}°C - {{ i.temp_max }}°C)
+                </small>
+              </p>
 
-                <a
-                  class="btn btn-primary rounded-pill py-2 px-4 mb-4"
-                  href="{% url 'getBookedSlots' i.groundname %}"
-                  >Book Now</a
-                >
+              <a
+                class="btn btn-primary rounded-pill py-2 px-4 mb-4"
+                href="{% url 'getBookedSlots' i.groundname %}"
+                >Book Now</a
+              >
               {% elif login == 'admin' %}
               <div class="update" style="display: flex">
                 <a
