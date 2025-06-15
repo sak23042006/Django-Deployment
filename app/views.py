@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer, GroundsSerializer
+from django.contrib.auth.hashers import check_password
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -67,13 +68,19 @@ class UpdateUserDetailView(APIView):
 
 class RegisterAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        serializer = UserSerializer(data=request.data)
+        try:
+            serializer = UserSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if serializer.is_valid():
-            serializer.save()
-            
-            return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Debugging purpose → prints error in console
+            print("Error during registration:", str(e))
+
+            # Return a proper JSON response
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def index(request):
@@ -87,21 +94,29 @@ def login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-     
+
+        # Admin login (hardcoded)
         if email == 'admin@gmail.com' and password == 'admin':
-            request.session['email']=email
-            request.session['login']='admin'
-            return redirect('home') 
+            request.session['email'] = email
+            request.session['login'] = 'admin'
+            return redirect('home')
 
-        elif User.objects.filter(email=email,password=password).exists():
-
-            request.session['email']=email
-            request.session['login']='user'
-            return redirect('home')  
-        else:
-
-            messages.error(request, 'Invalid username or password.')
+        # Check if the user exists
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            messages.error(request, 'Invalid email or password.')
             return redirect('login')
+
+        # Use check_password to verify hashed password
+        if check_password(password, user.password):
+            request.session['email'] = email
+            request.session['login'] = 'user'
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid email or password.')
+            return redirect('login')
+
     return render(request, 'login.html')
 
 def admin_register(request):
@@ -574,7 +589,8 @@ def getBookedSlots(request, groundname):
         adjusted_price = original_price
 
         if discount_percentage > 0:
-            adjusted_price = round(original_price * (1 - discount_percentage / 100))
+            discount_factor = Decimal('1') - (Decimal(discount_percentage) / Decimal('100'))
+            adjusted_price = round(original_price * discount_factor)
 
         slot.original_price = original_price
         slot.adjusted_price = adjusted_price

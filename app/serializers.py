@@ -2,14 +2,15 @@ from rest_framework import serializers
 from .models import User, Grounds
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-
+from django.contrib.auth import get_user_model
 
 class UserSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['id','firstname', 'lastname', 'email', 'phone', 'password', 'confirm_password']
+        fields = ['id', 'firstname', 'lastname', 'email', 'phone', 'password', 'confirm_password']
 
     def validate(self, data):
         password = data.get('password')
@@ -26,17 +27,8 @@ class UserSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        # Remove confirm_password as it should not be passed to the User model
         validated_data.pop('confirm_password', None)
-
-        # Create the user instance with the remaining validated data
-        # password = validated_data.pop('password')
-        user = User(**validated_data)  # Pass only fields present in the User model
-        # user.set_password(password)  # Hash the password before saving
-        user.save()
-        return user
-
-
+        return User.objects.create(**validated_data)
 
 class GroundsSerializer(serializers.ModelSerializer):
     class Meta:

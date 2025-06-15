@@ -25,15 +25,13 @@
       padding: 30px;
       max-width: 700px;
       width: 100%;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
       margin: 40px auto;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
     .registration-container:hover {
       transform: translateY(-10px);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     }
-
     .registration-container img {
       max-width: 400px;
       width: 100%;
@@ -41,22 +39,18 @@
       display: block;
       margin: 0 auto 20px;
     }
-
     .form-row {
       margin-bottom: 15px;
     }
-
     .form-control {
       border-radius: 5px;
       padding: 12px;
       border: 1px solid #ddd;
     }
-
     .form-control:focus {
       border-color: #007bff;
       box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
     }
-
     .btn-primary {
       background-color: #007bff;
       border-color: #007bff;
@@ -65,12 +59,10 @@
       border-radius: 5px;
       font-size: 16px;
     }
-
     .btn-primary:hover {
       background-color: #0056b3;
       border-color: #0056b3;
     }
-
     .btn-secondary {
       background-color: #6c757d;
       border-color: #6c757d;
@@ -80,28 +72,22 @@
       font-size: 16px;
       margin-top: 10px;
     }
-
     .btn-secondary:hover {
       background-color: #5a6268;
       border-color: #545b62;
     }
-
     .text-center {
       margin-top: 10px;
     }
-
     .text-center a {
       color: #007bff;
       text-decoration: none;
     }
-
     .text-center a:hover {
       text-decoration: underline;
     }
-
-    /* Add this to your CSS file */
     .register-admin-btn {
-      background-color: #28a745; /* Bootstrap green */
+      background-color: #28a745;
       color: #fff;
       border: none;
       padding: 10px 20px;
@@ -110,7 +96,6 @@
       font-weight: bold;
       transition: background 0.2s;
     }
-
     .register-admin-btn:hover {
       background-color: #218838;
     }
@@ -178,7 +163,6 @@
             required
           />
         </div>
-
         <div class="col-md-6">
           <input
             type="password"
@@ -211,7 +195,7 @@
     document
       .getElementById("registration-form")
       .addEventListener("submit", function (e) {
-        e.preventDefault() // Prevent the default form submission
+        e.preventDefault()
 
         const formData = new FormData(this)
         const data = {}
@@ -219,35 +203,35 @@
           data[key] = value
         })
 
-        // Add CSRF token for security
         const csrfToken = document.querySelector(
           "[name=csrfmiddlewaretoken]"
         ).value
-        data["csrfmiddlewaretoken"] = csrfToken
 
         // Send POST request to API
         fetch("/api/register/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken, // ✅ CSRF header required for Django
           },
           body: JSON.stringify(data),
         })
           .then((response) => response.json())
           .then((data) => {
-            // Display success message
             if (data.message) {
               document.getElementById("message").innerHTML =
                 '<center><div class="alert alert-success">' +
                 data.message +
                 "</div></center>"
-              // Reset the form
               document.getElementById("registration-form").reset()
             } else {
-              // Handle validation errors
               const errors = Object.values(data)
               let errorMessages = errors
-                .map((error) => "<p>" + error.join(", ") + "</p>")
+                .map((error) =>
+                  Array.isArray(error)
+                    ? "<p>" + error.join(", ") + "</p>"
+                    : "<p>" + error + "</p>"
+                )
                 .join("")
               document.getElementById("message").innerHTML =
                 '<center><div class="alert alert-danger">' +
@@ -257,6 +241,8 @@
           })
           .catch((error) => {
             console.error("Error:", error)
+            document.getElementById("message").innerHTML =
+              '<center><div class="alert alert-danger">Something went wrong. Please try again.</div></center>'
           })
       })
   </script>

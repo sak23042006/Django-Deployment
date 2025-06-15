@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from decouple import config
-from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,9 +26,9 @@ SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = False   # Change this to False for production
+DEBUG = True   # Change this to False for production
 
-ALLOWED_HOSTS = ['django-deployment-b9x7.onrender.com', '127.0.0.1', 'localhost','*']
+ALLOWED_HOSTS = ['django-deployment-2e76.onrender.com', '127.0.0.1']
 
 ADMIN_CONFIRM_CODE = config('ADMIN_CONFIRM_CODE')
 
